@@ -23,6 +23,17 @@ services:
     networks:
       - loki
 
+  grafana-init:
+    image: alpine:latest
+    user: root
+    entrypoint:
+      - "chown"
+      - "472:root"
+      - "/var/lib/grafana"
+    volumes:
+      - ./config/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./.data/grafana:/var/lib/grafana
+
   grafana:
     image: grafana/grafana:11.4.0
     ports:
@@ -33,9 +44,12 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
     volumes:
       - ./config/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yml
-      - grafana:/var/lib/grafana
+      - ./.data/grafana:/var/lib/grafana
     networks:
       - loki
+    depends_on:
+      grafana-init:
+        condition: service_completed_successfully
 
   prometheus:
     image: prom/prometheus:v3.0.1
